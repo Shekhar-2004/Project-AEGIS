@@ -1,0 +1,28 @@
+# Virtual environment
+nmrs_env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Jupyter
+.ipynb_checkpoints/
+
+# VS Code
+.vscode/
+
+# OS files
+Thumbs.db
+desktop.ini
+
+# Outputs / generated files
+data/outputs/
+*.png
+*.jpg
+*.csv
+*.log
+
+# Model weights
+*.pt
