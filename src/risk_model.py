@@ -54,3 +54,62 @@ class NearMissRiskModel:
             })
 
         return results
+    
+    
+class NearMissEventDetector:
+    def __init__(
+        self,
+        alpha=0.6,           # EMA smoothing factor
+        risk_threshold=0.6,  # NMRS threshold
+        persistence=5        # frames
+    ):
+        self.alpha = alpha
+        self.risk_threshold = risk_threshold
+        self.persistence = persistence
+        self.states = {}
+
+    def update(self, risk_data):
+        """
+        risk_data: output from NearMissRiskModel
+        returns: list with near-miss event info
+        """
+        results = []
+
+        for r in risk_data:
+            key = (r["person_id"], r["vehicle_id"])
+            nmrs = r["nmrs"]
+
+            if key not in self.states:
+                self.states[key] = {
+                    "smooth_nmrs": nmrs,
+                    "above_count": 0,
+                    "active": False
+                }
+
+            state = self.states[key]
+
+            # EMA smoothing
+            state["smooth_nmrs"] = (
+                self.alpha * nmrs +
+                (1 - self.alpha) * state["smooth_nmrs"]
+            )
+
+            # Threshold persistence logic
+            if state["smooth_nmrs"] > self.risk_threshold:
+                state["above_count"] += 1
+            else:
+                state["above_count"] = 0
+                state["active"] = False
+
+            # Declare near-miss
+            if state["above_count"] >= self.persistence:
+                state["active"] = True
+
+            results.append({
+                **r,
+                "smooth_nmrs": state["smooth_nmrs"],
+                "near_miss": state["active"]
+            })
+
+        return results
+

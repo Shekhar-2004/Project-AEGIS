@@ -1,9 +1,10 @@
 # src/video_io.py
 
+from typing import Union
 import cv2
 
 
-def open_video(source=0):
+def open_video(source: Union[int, str] = 0):
     """
     Open a video source.
     source = 0 for webcam, or file path as string.
@@ -14,7 +15,6 @@ def open_video(source=0):
         raise RuntimeError("Error: Could not open video source.")
 
     return cap
-
 
 def read_frame(cap):
     """
