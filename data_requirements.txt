@@ -1,0 +1,5 @@
+{
+    "class": "person" | "vehicle",
+    "confidence": float,
+    "bbox": [x_min, y_min, x_max, y_max]
+}

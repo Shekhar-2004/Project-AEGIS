@@ -1,0 +1,26 @@
+fastapi>=0.100
+uvicorn>=0.20
+python-multipart
+
+numpy
+opencv-python
+
+sqlalchemy
+psycopg2-binary
+
+python-dotenv
+
+google-generativeai
+
+#| Package             | Why               |
+# | ------------------- | ----------------- |
+# | fastapi             | API               |
+# | uvicorn             | server            |
+# | python-multipart    | file upload       |
+# | numpy               | math / homography |
+# | opencv-python       | video processing  |
+# | sqlalchemy          | ORM               |
+# | psycopg2-binary     | PostgreSQL        |
+# | python-dotenv       | env vars          |
+# | google-generativeai | Gemini API        |
+#| Additional packages may be added as needed during development. |

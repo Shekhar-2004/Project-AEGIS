@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>AEGIS Dashboard</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #eef2f7;
+    margin: 0;
+    padding: 20px;
+}
+
+h1 {
+    color: #2c3e50;
+}
+
+.dashboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.card {
+    background: white;
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.video {
+    width: 100%;
+    border-radius: 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th {
+    background: #2c3e50;
+    color: white;
+    padding: 10px;
+}
+
+td {
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+    text-align: center;
+}
+
+.low { color: green; }
+.medium { color: orange; }
+.high { color: red; }
+
+.full {
+    grid-column: span 2;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🚦 AEGIS Real-Time Risk Dashboard</h1>
+
+<div class="dashboard">
+
+    <!-- VIDEO -->
+    <div class="card">
+        <h3>Live Video Feed</h3>
+        <img src="http://127.0.0.1:8000/video_feed" class="video">
+    </div>
+
+    <!-- STATS -->
+    <div class="card">
+        <h3>Stats</h3>
+        <p id="stats">Loading...</p>
+        <canvas id="nmrsChart"></canvas>
+    </div>
+
+    <!-- TTC GRAPH -->
+    <div class="card">
+        <h3>TTC vs Time</h3>
+        <canvas id="ttcChart"></canvas>
+    </div>
+
+    <!-- DISTANCE GRAPH -->
+    <div class="card">
+        <h3>Distance vs NMRS</h3>
+        <canvas id="distanceChart"></canvas>
+    </div>
+
+    <!-- RISK DISTRIBUTION -->
+    <div class="card full">
+        <h3>Risk Distribution</h3>
+        <canvas id="riskChart"></canvas>
+    </div>
+
+    <!-- TABLE -->
+    <div class="card full">
+        <h3>Alerts</h3>
+        <table id="table">
+            <tr>
+                <th>Object 1</th>
+                <th>Object 2</th>
+                <th>Risk</th>
+                <th>Summary</th>
+            </tr>
+        </table>
+    </div>
+
+</div>
+
+<script>
+
+let nmrsChart, ttcChart, distanceChart, riskChart;
+
+function loadData() {
+    fetch("http://127.0.0.1:8000/alerts")
+    .then(res => res.json())
+    .then(data => {
+
+        let table = document.getElementById("table");
+        table.innerHTML = `
+        <tr>
+        <th>Object 1</th>
+        <th>Object 2</th>
+        <th>Risk</th>
+        <th>Summary</th>
+        </tr>`;
+
+        data.forEach(i => {
+            let row = table.insertRow();
+
+            row.insertCell(0).innerText = i.object_1;
+            row.insertCell(1).innerText = i.object_2;
+
+            let risk = row.insertCell(2);
+            risk.innerText = i.risk_level;
+
+            risk.className =
+                i.risk_level === "HIGH" ? "high" :
+                i.risk_level === "MEDIUM" ? "medium" : "low";
+
+            row.insertCell(3).innerText = i.ai_summary;
+        });
+
+        drawCharts(data);
+        loadStats();
+    });
+}
+
+function drawCharts(data) {
+
+    let labels = data.map((_, i) => i+1);
+    let nmrs = data.map(d => d.nmrs);
+    let ttc = data.map(d => d.ttc);
+    let distance = data.map(d => d.distance);
+
+    // NMRS
+    if(nmrsChart) nmrsChart.destroy();
+    nmrsChart = new Chart(document.getElementById("nmrsChart"), {
+        type: "line",
+        data: { labels, datasets: [{ label:"NMRS", data: nmrs }] }
+    });
+
+    // TTC
+    if(ttcChart) ttcChart.destroy();
+    ttcChart = new Chart(document.getElementById("ttcChart"), {
+        type: "line",
+        data: { labels, datasets: [{ label:"TTC", data: ttc }] }
+    });
+
+    // Distance vs NMRS
+    if(distanceChart) distanceChart.destroy();
+    distanceChart = new Chart(document.getElementById("distanceChart"), {
+        type: "scatter",
+        data: {
+            datasets: [{
+                label: "Distance vs NMRS",
+                data: data.map(d => ({x: d.distance, y: d.nmrs}))
+            }]
+        }
+    });
+
+    // Risk Distribution
+    let low = data.filter(d => d.risk_level==="LOW").length;
+    let med = data.filter(d => d.risk_level==="MEDIUM").length;
+    let high = data.filter(d => d.risk_level==="HIGH").length;
+
+    if(riskChart) riskChart.destroy();
+    riskChart = new Chart(document.getElementById("riskChart"), {
+        type: "bar",
+        data: {
+            labels: ["LOW","MEDIUM","HIGH"],
+            datasets: [{
+                label: "Risk Count",
+                data: [low, med, high]
+            }]
+        }
+    });
+}
+
+function loadStats() {
+    fetch("http://127.0.0.1:8000/stats")
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById("stats").innerText =
+        `LOW: ${data.LOW} | MEDIUM: ${data.MEDIUM} | HIGH: ${data.HIGH}`;
+    });
+}
+
+setInterval(loadData, 2000);
+
+</script>
+
+</body>
+</html>
